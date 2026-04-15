@@ -6,3 +6,4 @@ export {
   NotFoundError,
   UnauthorizedAppError,
 } from "./errors";
+export { handleResponse } from "./response";
