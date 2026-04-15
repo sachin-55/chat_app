@@ -1,6 +1,7 @@
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import { HealthCheckResponse } from "@/types";
+import { globalCentralErrorHandler } from "./controllers";
 
 const app: Application = express();
 
@@ -17,4 +18,5 @@ app.get("/health", (_req: Request, res: Response) => {
   res.json(health);
 });
 
+app.use(globalCentralErrorHandler);
 export default app;

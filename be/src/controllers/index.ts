@@ -1,0 +1,1 @@
+export { globalCentralErrorHandler } from "./globalErrorController";
