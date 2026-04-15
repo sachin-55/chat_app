@@ -1,6 +1,6 @@
-import app from "./app";
 import { config } from "@/config";
 import http from "http";
+import app from "./app";
 
 const PORT = config.PORT;
 
@@ -23,5 +23,5 @@ process.on("unhandledRejection", (err: Error) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`[server]: Running on http://localhost:${PORT}`);
+  console.log(`[server]: Running on http://localhost:${PORT} 🎰`);
 });

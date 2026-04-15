@@ -1,15 +1,14 @@
-import express, { Application, Request, Response } from "express";
+import express, { Application, NextFunction, Request, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { HealthCheckResponse } from "@/types";
 import { globalCentralErrorHandler } from "./controllers";
 import { config } from "@/config";
 import { responseHandler } from "@/middlewares";
 import { mainRouterV1 } from "./routes";
+import { initDB } from "@/database";
 
 const app: Application = express();
 
-// Middlewares
 app.use(
   cors({
     origin: config.ALLOWED_ORIGINS,
@@ -22,16 +21,25 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(responseHandler());
 
-// Routes
 app.get("/health", (_req: Request, res: Response) => {
-  const health: HealthCheckResponse = {
-    status: "ok",
-    timestamp: new Date().toISOString(),
-  };
-  res.json(health);
+  res.handleResponse({
+    data: {
+      status: "ok",
+      timestamp: new Date().toISOString(),
+    },
+    message: "Health check passed",
+  });
 });
 
 app.use("/api/v1", mainRouterV1());
+initDB();
+
+app.use((req: Request, res: Response) => {
+  res.handleResponse({
+    statusCode: 404,
+    message: req.originalUrl + " not found",
+  });
+});
 
 app.use(globalCentralErrorHandler);
 export default app;

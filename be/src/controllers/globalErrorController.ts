@@ -98,7 +98,7 @@ const sendError = (
     errorResponse.message = customError?.isOperational
       ? customError?.message
       : "Something went wrong.";
-    console.error("ERROR ==> ", errorResponse);
+    console.error("ERROR ==> ", customError);
   }
 
   return res.status(customError.statusCode || 500).json(errorResponse);

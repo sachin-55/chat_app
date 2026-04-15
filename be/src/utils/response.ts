@@ -12,15 +12,15 @@ export const handleResponse = ({
   if (statusCode >= 400) {
     if (statusCode >= 500) {
       throw new AppError(
-        "Server Error",
-        StatusCodes.INTERNAL_SERVER_ERROR,
         message || "Something went wrong. ",
+        statusCode || StatusCodes.INTERNAL_SERVER_ERROR,
+        "Server Error",
       );
     } else {
       throw new AppError(
-        "Bad Request",
-        StatusCodes.BAD_REQUEST,
         message || "An error occurred. ",
+        statusCode || StatusCodes.BAD_REQUEST,
+        "Bad Request",
       );
     }
   }
