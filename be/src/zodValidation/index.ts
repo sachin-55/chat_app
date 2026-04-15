@@ -33,9 +33,10 @@ export const zValidateData = (schema: z.ZodObject<any, any>) => {
           });
 
           const CustomError = new AppError(
-            JSON.stringify(errorMessages.join(", ")),
+            `Invalid ${Array.from(initialPath).join(", ")} Data. ` +
+              JSON.stringify(errorMessages.join(", ")),
             400,
-            `Invalid ${Array.from(initialPath).join(", ")} Data`,
+            "ValidationError",
           );
           next(CustomError);
         } else {

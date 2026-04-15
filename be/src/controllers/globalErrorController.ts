@@ -56,15 +56,6 @@ const sendError = (
     customError.isOperational = true;
   }
 
-  if (
-    customError.name === "SyntaxError" &&
-    customError.message.includes("Unexpected token ")
-  ) {
-    customError.message = "Invalid data format";
-    customError.statusCode = StatusCodes.BAD_REQUEST;
-    customError.isOperational = true;
-  }
-
   !customError.isOperational &&
     console.log("NON OPERATIONAL ERROR :: ", customError.message, {
       name: customError.name,
