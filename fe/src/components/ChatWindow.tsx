@@ -4,6 +4,7 @@ import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { Avatar, Flex, Input, Button } from "./Common";
 import { useSocket } from "../context/socketProvider";
+import dayjs from "dayjs";
 
 const ChatContainer = styled.div`
   flex: 1;
@@ -117,7 +118,7 @@ const ChatWindow: React.FC = () => {
       console.error(err);
     }
   };
-
+  const userOnlineStatus = userStatus?.get(otherParticipant._id);
   return (
     <ChatContainer>
       <ChatHeader>
@@ -131,13 +132,14 @@ const ChatWindow: React.FC = () => {
           </Avatar>
           <div>
             <h4 style={{ margin: 0 }}>{otherParticipant.name}</h4>
-            {userStatus?.get(otherParticipant._id)?.isOnline ? (
+            {userOnlineStatus?.isOnline ? (
               <span style={{ fontSize: "0.8rem", color: "var(--success)" }}>
                 Online
               </span>
             ) : (
               <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                Offline &bull; {otherParticipant?.lastSeen}
+                Offline &bull; Last seen{" "}
+                {dayjs(userOnlineStatus?.lastSeen).format("YYYY-MM-DD HH:mm")}
               </span>
             )}
           </div>
