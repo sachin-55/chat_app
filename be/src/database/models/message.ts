@@ -22,14 +22,6 @@ const messageSchema = new Schema<IMessage>({
   deliveredAt: { type: Date },
   readAt: { type: Date },
   pushNotificationSent: { type: Boolean },
-  senderDetails: {
-    type: {
-      _id: { type: Schema.Types.ObjectId },
-      name: { type: String },
-      avatar: { type: String },
-      email: { type: String },
-    },
-  },
 });
 
 export const Message = model<IMessage>("Message", messageSchema);

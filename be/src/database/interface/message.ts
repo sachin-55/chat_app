@@ -10,6 +10,7 @@ export enum CHAT_STATUS {
 export interface IMessageType {
   conversationId: mongoose.Types.ObjectId;
   senderId: mongoose.Types.ObjectId;
+  receiverId: mongoose.Types.ObjectId;
   text?: string;
   images?: string[];
   files?: {

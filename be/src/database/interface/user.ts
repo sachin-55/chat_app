@@ -5,6 +5,9 @@ export interface IUserType {
   email: string;
   avatar?: string;
   password: string;
+  lastSeen?: string;
+  isOnline: boolean;
+  socketId?: string;
 }
 
 export interface IUser extends Document, IUserType {}

@@ -1,3 +1,4 @@
+import { IUser } from "@/database/interface/user";
 import { PaginationType, StatusCodesType } from "@/types";
 
 declare global {
@@ -11,7 +12,7 @@ declare global {
       }) => void;
     }
     interface Request {
-      user?: any;
+      user?: IUser;
     }
   }
 }

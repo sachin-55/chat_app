@@ -1,6 +1,7 @@
 import { config } from "@/config";
 import http from "http";
 import app from "./app";
+import { initSocket } from "./socket";
 
 const PORT = config.PORT;
 
@@ -21,7 +22,7 @@ process.on("unhandledRejection", (err: Error) => {
     process.exit(1);
   });
 });
-
+initSocket(server);
 server.listen(PORT, () => {
   console.log(`[server]: Running on http://localhost:${PORT} 🎰`);
 });
