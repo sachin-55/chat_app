@@ -18,6 +18,7 @@ const verifyToken = (token: string): Promise<JwtPayload> => {
 export const authenticate = catchAsync(
   async (req: Request, _res: Response, next: NextFunction) => {
     const token = req.cookies.token;
+
     if (!token) {
       throw new UnauthorizedAppError("Invalid Token or token not found.");
     }
@@ -26,6 +27,7 @@ export const authenticate = catchAsync(
 
     const userId = decodedToken?.id;
     const user = await User.findById(userId);
+
     if (!user) {
       throw new UnauthorizedAppError("Invalid Token.");
     }

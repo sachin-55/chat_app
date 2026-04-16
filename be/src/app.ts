@@ -1,11 +1,11 @@
-import express, { Application, NextFunction, Request, Response } from "express";
-import cors from "cors";
-import cookieParser from "cookie-parser";
-import { globalCentralErrorHandler } from "./controllers";
 import { config } from "@/config";
-import { responseHandler } from "@/middlewares";
-import { mainRouterV1 } from "./routes";
 import { initDB } from "@/database";
+import { responseHandler } from "@/middlewares";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import express, { Application, Request, Response } from "express";
+import { globalCentralErrorHandler } from "./controllers";
+import { mainRouterV1 } from "./routes";
 
 const app: Application = express();
 

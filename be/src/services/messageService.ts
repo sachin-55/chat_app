@@ -6,10 +6,7 @@ import { UpdateQuery } from "mongoose";
 
 export const createNewMessage = async (
   conversationId: string,
-  message: Pick<
-    IMessageType,
-    "conversationId" | "text" | "images" | "files" | "replyTo"
-  >,
+  message: Pick<IMessageType, "conversationId" | "text" | "replyTo">,
   userId: string,
 ) => {
   const existedConversation = await Conversation.findById(conversationId);
@@ -18,25 +15,12 @@ export const createNewMessage = async (
     throw new NotFoundError("Conversation not found");
   }
 
-  const { files, ...restMessages } = message;
-  const filteredFiles = files
-    ?.filter((x) => !!x.url)
-    ?.map((x) => {
-      return {
-        url: x.url,
-        name: x.name || "",
-        size: x.size || 0,
-        mimeType: x.mimeType || "",
-      };
-    });
-
-  const receiverId = existedConversation.participants.find(
+  const receiverId = existedConversation.participantIds.find(
     (id) => id.toString() !== userId,
   );
 
   const newMessage = await Message.create({
-    ...restMessages,
-    files: filteredFiles,
+    ...message,
     senderId: userId,
     receiverId,
     status: "SENT",

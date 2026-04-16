@@ -103,13 +103,17 @@ export const handleGetUserOnlineStatus = async (
   userId: string,
   data: any,
 ): Promise<void> => {
-  const { participants } = data as {
-    participants: string[];
+  const { participantIds } = data as {
+    participantIds: string[];
   };
 
-  if (participants && Array.isArray(participants) && participants.length > 0) {
+  if (
+    participantIds &&
+    Array.isArray(participantIds) &&
+    participantIds.length > 0
+  ) {
     try {
-      const status = await getUserStatus(participants);
+      const status = await getUserStatus(participantIds);
 
       socket.nsp.in(userId).emit("user-online-status", status);
     } catch (error) {
@@ -166,7 +170,7 @@ const checkRoomValidity = async ({
     return false;
   }
 
-  const isParticipant = existedConversation?.participants
+  const isParticipant = existedConversation?.participantIds
     ?.map(String)
     ?.includes(userId);
 
@@ -233,10 +237,7 @@ const handleNewMessage = (cSocket: Socket, userId: string) => {
   cSocket.on(
     "create-message",
     async (data: {
-      message: Pick<
-        IMessageType,
-        "conversationId" | "text" | "images" | "files" | "replyTo"
-      >;
+      message: Pick<IMessageType, "conversationId" | "text" | "replyTo">;
     }) => {
       const { message } = data;
 

@@ -12,7 +12,7 @@ export const config = {
   DATABASE_URI: process.env.DATABASE_URI || "",
   ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET || "",
   REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET || "",
-  ACCESS_TOKEN_EXPIRY: (process.env.ACCESS_TOKEN_EXPIRY || "15m") as
+  ACCESS_TOKEN_EXPIRY: (process.env.ACCESS_TOKEN_EXPIRY || "1d") as
     | number
     | StringValue,
   REFRESH_TOKEN_EXPIRY: (process.env.REFRESH_TOKEN_EXPIRY || "7d") as

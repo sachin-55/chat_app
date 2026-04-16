@@ -14,12 +14,12 @@ export const createNewConversation = catchAsync(
     const { recipientId } = createConversationSchema.parse(req.body);
 
     let conversation = await Conversation.findOne({
-      participants: { $all: [userId, recipientId] },
+      participantIds: { $all: [userId, recipientId] },
     });
 
     if (!conversation && userId) {
       conversation = await Conversation.create({
-        participants: [userId, recipientId],
+        participantIds: [userId, recipientId],
       });
     }
 
@@ -52,7 +52,7 @@ export const getConversations = catchAsync(
       {
         $lookup: {
           from: "users",
-          localField: "participants",
+          localField: "participantIds",
           foreignField: "_id",
           as: "participants",
         },
@@ -78,7 +78,18 @@ export const getConversations = catchAsync(
 
       {
         $facet: {
-          data: [{ $skip: skip }, { $limit: Number(limit) }],
+          data: [
+            {
+              $lookup: {
+                from: "messages",
+                localField: "lastMessageId",
+                foreignField: "_id",
+                as: "lastMessage",
+              },
+            },
+            { $skip: skip },
+            { $limit: Number(limit) },
+          ],
 
           metadata: [{ $count: "total" }],
         },
@@ -93,6 +104,7 @@ export const getConversations = catchAsync(
     return res.handleResponse({
       data: conversations,
       pagination: {
+        results: conversations.length,
         totalResults: total,
         page: Number(page),
         limit: Number(limit),

@@ -71,8 +71,16 @@ export const getAllUsers = catchAsync(async (req: Request, res: Response) => {
     .sort("-createdAt")
     .limit(limit)
     .skip((page - 1) * limit);
+  const counts = await User.countDocuments(filter);
+  const pagination = {
+    totalResults: counts,
+    page,
+    limit,
+    totalPages: Math.ceil(counts / limit),
+    results: users.length,
+  };
 
-  return res.handleResponse({ data: users });
+  return res.handleResponse({ data: users, pagination });
 });
 
 export const logout = catchAsync(async (_req: Request, res: Response) => {
@@ -82,5 +90,6 @@ export const logout = catchAsync(async (_req: Request, res: Response) => {
     sameSite: "lax",
     maxAge: 0,
   });
+
   return res.handleResponse({ message: "Logout successfully" });
 });
