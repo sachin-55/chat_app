@@ -22,7 +22,9 @@ const updateUserStatus = async (userId: string, socketId?: string) => {
     updatePayload.isOnline = false;
   }
 
-  return User.findByIdAndUpdate(userId, updatePayload, { new: true });
+  return User.findByIdAndUpdate(userId, updatePayload, {
+    returnDocument: "after",
+  });
 };
 
 export const updateUserOnlineStatus = async (
@@ -133,6 +135,8 @@ export const typingHandlers = (cSocket: Socket, userId: string) => {
   // Listen for typing events
   cSocket.on("start-typing", (room: string) => {
     const isConnectedToRoom = cSocket.rooms?.has(room);
+    console.log({ isConnectedToRoom, room });
+
     if (isConnectedToRoom && room) {
       cSocket.nsp.in(room).emit("start-typing", {
         userId,
@@ -343,7 +347,7 @@ export const chatHandlers = (cSocket: Socket, userId: string) => {
   handleJoinChatRoom(cSocket, userId);
   handleNewMessage(cSocket, userId);
   updateMessageStatus(cSocket, userId);
-  cSocket.on("leave-room", async (room: string) => {
+  cSocket.on("leave-chat-room", async (room: string) => {
     if (typeof room === "string" && !cSocket?.rooms?.has(room)) {
       cSocket.emit("socket-error", { message: `You are not part of ${room}` });
       return;

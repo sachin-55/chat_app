@@ -130,11 +130,11 @@ const Sidebar: React.FC = () => {
                     )}
                   </Avatar>
                   <Status
-                    $online={userStatus?.get(receiverUser._id)?.isOnline}
+                    $online={userStatus?.get(receiverUser?._id)?.isOnline}
                   />
                 </AvatarWrapper>
                 <div style={{ flex: 1 }}>
-                  <UserName>{receiverUser.name}</UserName>
+                  <UserName>{receiverUser?.name}</UserName>
                   <LastMsg>{conversation.lastMessage?.text}</LastMsg>
                 </div>
               </Flex>

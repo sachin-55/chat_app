@@ -23,6 +23,7 @@ export const createNewMessage = async (
     ...message,
     senderId: userId,
     receiverId,
+    sentAt: Date.now(),
     status: "SENT",
   });
 
@@ -35,7 +36,7 @@ export const createNewMessage = async (
       $set: { lastMessageId: newMessage._id },
       $inc: incFields,
     },
-    { new: true, lean: true },
+    { returnDocument: "after", lean: true },
   );
 
   return { message: newMessage, conversation: updatedConversation };
@@ -61,7 +62,7 @@ export const updateChatStatus = async ({
   const chat = await Message.findByIdAndUpdate(
     messageId,
     { $set: update },
-    { new: true, lean: true },
+    { returnDocument: "after", lean: true },
   )
     .populate("conversationId")
     .lean();
@@ -80,7 +81,7 @@ export const updateChatStatus = async ({
       {
         $inc: { [`unreadCounts.${receiverId}`]: -1 },
       },
-      { new: true, lean: true },
+      { returnDocument: "after", lean: true },
     );
 
     if (updatedConversation) {

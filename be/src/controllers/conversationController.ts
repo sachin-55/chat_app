@@ -198,6 +198,11 @@ export const getMessages = catchAsync(async (req: Request, res: Response) => {
         files: 1,
         status: 1,
         sentAt: 1,
+        senderId: 1,
+        readAt: 1,
+        deliveredAt: 1,
+        receiverId: 1,
+        createdAt: 1,
         sender: {
           _id: 1,
           name: 1,

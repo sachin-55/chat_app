@@ -1,92 +1,197 @@
-import React, { useState, useRef, useEffect } from "react";
-import styled from "styled-components";
-import { useChatStore } from "../store/useChatStore";
-import { useAuthStore } from "../store/useAuthStore";
-import { Avatar, Flex, Input, Button } from "./Common";
-import { useSocket } from "../context/socketProvider";
 import dayjs from "dayjs";
-
-const ChatContainer = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-primary);
-  height: calc(100vh - 80px);
-`;
-
-const ChatHeader = styled.div`
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid var(--border);
-  background: var(--glass-bg);
-  backdrop-filter: blur(10px);
-`;
-
-const MessageList = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
-
-const MessageBubble = styled.div<{ $isOwn: boolean }>`
-  max-width: 60%;
-  padding: 0.75rem 1rem;
-  border-radius: 16px;
-  font-size: 0.95rem;
-  align-self: ${({ $isOwn }) => ($isOwn ? "flex-end" : "flex-start")};
-  background: ${({ $isOwn }) =>
-    $isOwn
-      ? "linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))"
-      : "var(--bg-secondary)"};
-  color: ${({ $isOwn }) => ($isOwn ? "white" : "var(--text-primary)")};
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  animation: fadeIn 0.2s ease-out;
-  border-bottom-right-radius: ${({ $isOwn }) => ($isOwn ? "4px" : "16px")};
-  border-bottom-left-radius: ${({ $isOwn }) => ($isOwn ? "16px" : "4px")};
-`;
-
-const InputArea = styled.div`
-  padding: 1.5rem;
-  border-top: 1px solid var(--border);
-`;
-
-const StyledForm = styled.form`
-  display: flex;
-  gap: 0.75rem;
-  background: var(--bg-secondary);
-  padding: 0.5rem;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-`;
-
-const EmptyState = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  text-align: center;
-`;
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useSocket } from "../context/socketProvider";
+import { useIntersectionObserver } from "../hooks/useIntersectionObserver";
+import { useAuthStore } from "../store/useAuthStore";
+import { useChatStore } from "../store/useChatStore";
+import type { Conversation, Message } from "../types";
+import { debounce } from "../utils/debounce";
+import { throttle } from "../utils/throttle";
+import {
+  ChatContainer,
+  ChatHeader,
+  EmptyState,
+  InputArea,
+  MessageList,
+  MessageBubble,
+  StyledForm,
+} from "./ChatWindow.styles";
+import { Avatar, Button, Flex, Input } from "./Common";
+import IndividualMessage from "./IndividualMessage";
 
 const ChatWindow: React.FC = () => {
-  const { activeConversation, messages } = useChatStore();
+  const {
+    activeConversation,
+    activeConversationId,
+    messages,
+    addMessage,
+    updateMessage,
+    updateConversation,
+    fetchMessages,
+    messagePagination,
+    isLoading,
+  } = useChatStore();
   const { user: currentUser } = useAuthStore();
   const [text, setText] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { userStatus } = useSocket();
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "end",
-    });
-  };
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
+
+  const { userStatus, mainSocket, isSocketConnected } = useSocket();
+  const messageListRef = useRef<HTMLDivElement>(null);
+  const { isIntersecting, targetRef } = useIntersectionObserver<HTMLDivElement>(
+    {
+      enabled: messagePagination?.hasMore && !isLoading?.messages,
+      options: { rootMargin: "20px", threshold: 0.2 },
+    },
+  );
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (!activeConversationId) return;
+    const abortController = new AbortController();
+    fetchMessages(
+      activeConversationId,
+      { cursor: null, limit: 10 },
+      abortController.signal,
+    );
+    return () => {
+      abortController.abort();
+    };
+  }, [activeConversationId, fetchMessages]);
+
+  useEffect(() => {
+    if (!isIntersecting) return;
+    fetchMessages(activeConversationId, {
+      cursor: messagePagination?.nextCursor,
+      limit: 10,
+    });
+  }, [isIntersecting, activeConversationId, fetchMessages]);
+
+  const emitStartTyping = useMemo(
+    () =>
+      throttle(
+        () => mainSocket?.emit("start-typing", activeConversationId),
+        2000,
+      ),
+    [mainSocket, activeConversationId],
+  );
+
+  const emitStopTyping = useMemo(
+    () =>
+      debounce(
+        () => mainSocket?.emit("stop-typing", activeConversationId),
+        1000,
+      ),
+    [mainSocket, activeConversationId],
+  );
+
+  useEffect(() => {
+    return () => {
+      emitStartTyping.cancel();
+      emitStopTyping.cancel();
+    };
+  }, [emitStartTyping, emitStopTyping]);
+
+  const updateChatStatus = useCallback(
+    async (data: {
+      conversationId: string;
+      messageId: string;
+      status: "DELIVERED" | "READ";
+    }) => {
+      mainSocket?.emit("update-message-status", data);
+    },
+    [mainSocket],
+  );
+
+  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setText(e.target.value);
+    emitStartTyping();
+    emitStopTyping();
+  };
+
+  const handleNewMessage = useCallback(
+    (data: { conversation: Conversation; message: Message }) => {
+      addMessage(data.message);
+      if (data.message.senderId !== currentUser?._id) {
+        updateChatStatus({
+          conversationId: data.conversation._id,
+          messageId: data.message._id,
+          status: "DELIVERED",
+        });
+      }
+      updateConversation({
+        ...data.conversation,
+        lastMessageId: data.message._id,
+        lastMessage: data.message,
+      });
+    },
+    [addMessage, updateConversation, updateChatStatus, currentUser],
+  );
+
+  const handleUpdateMessageStatus = useCallback(
+    (data: {
+      message: Message & {
+        conversation: Conversation;
+      };
+    }) => {
+      const { message } = data;
+
+      if (message.senderId !== currentUser?._id) return;
+      updateMessage(message);
+    },
+    [updateMessage, currentUser],
+  );
+
+  useEffect(() => {
+    if (!isSocketConnected || !activeConversationId) return;
+
+    mainSocket?.emit(
+      "join-chat-room",
+      activeConversationId,
+      (success, message) => {
+        console.log("joined chat room", { success, message });
+      },
+    );
+
+    const handleStartTyping = (data: {
+      userId: string;
+      conversationId: string;
+    }) => {
+      if (data.userId !== currentUser?._id) {
+        setOtherUserTyping(true);
+      }
+    };
+
+    const handleStopTyping = (data: {
+      userId: string;
+      conversationId: string;
+    }) => {
+      if (data.userId !== currentUser?._id) {
+        setOtherUserTyping(false);
+      }
+    };
+    const handleError = (error) => {
+      console.info("Socket error:", error);
+    };
+    mainSocket?.on("start-typing", handleStartTyping);
+    mainSocket?.on("stop-typing", handleStopTyping);
+    mainSocket.on("new-message", handleNewMessage);
+    mainSocket.on("update-message-status", handleUpdateMessageStatus);
+    mainSocket.on("socket-error", handleError);
+
+    return () => {
+      mainSocket?.emit("leave-chat-room", activeConversationId);
+      mainSocket?.off("start-typing", handleStartTyping);
+      mainSocket?.off("stop-typing", handleStopTyping);
+      mainSocket?.off("new-message", handleNewMessage);
+      mainSocket?.off("update-message-status", handleUpdateMessageStatus);
+      mainSocket?.off("socket-error", handleError);
+    };
+  }, [activeConversationId, isSocketConnected, currentUser?._id]);
 
   if (!activeConversation) {
     return (
@@ -107,18 +212,33 @@ const ChatWindow: React.FC = () => {
     ) ||
       activeConversation?.participants?.[0]);
 
+  const sendMessage = async (conversationId: string, text: string) => {
+    mainSocket?.emit("create-message", {
+      message: { conversationId, text },
+    });
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim()) return;
 
     try {
-      // await sendMessage(activeConversation._id, text);
+      await sendMessage(activeConversation._id, text);
       setText("");
+      if (messageListRef.current) {
+        setTimeout(() => {
+          messageListRef.current.scrollTo({
+            top: 0,
+            behavior: "smooth",
+          });
+        }, 500);
+      }
     } catch (err) {
       console.error(err);
     }
   };
   const userOnlineStatus = userStatus?.get(otherParticipant._id);
+  const reversedMessages = [...messages].reverse();
   return (
     <ChatContainer>
       <ChatHeader>
@@ -146,16 +266,43 @@ const ChatWindow: React.FC = () => {
         </Flex>
       </ChatHeader>
 
-      <MessageList>
-        {messages.map((msg) => (
-          <MessageBubble
-            key={msg._id}
-            $isOwn={msg.senderId === currentUser?._id}
-          >
-            {msg.text}
-          </MessageBubble>
-        ))}
-        <div ref={messagesEndRef} />
+      <MessageList ref={messageListRef}>
+        {otherUserTyping && (
+          <MessageBubble $isOwn={false}>Typing...</MessageBubble>
+        )}
+        {isLoading?.messages && (
+          <MessageBubble $isOwn={false}>Loading...</MessageBubble>
+        )}
+        {reversedMessages.map((msg, i) => {
+          const isOwn = msg.senderId === currentUser?._id;
+
+          const currentDate = dayjs(msg.sentAt);
+          const prevDate =
+            i < reversedMessages.length - 1
+              ? dayjs(reversedMessages[i + 1].sentAt)
+              : null;
+          const isNewDay = !prevDate || !currentDate.isSame(prevDate, "day");
+
+          return (
+            <IndividualMessage
+              key={msg._id}
+              message={msg}
+              isOwn={isOwn}
+              isNewDay={isNewDay}
+              markAsRead={() => {
+                if (msg.readAt) return;
+                console.log("marking as read");
+
+                updateChatStatus({
+                  conversationId: activeConversationId,
+                  messageId: msg._id,
+                  status: "READ",
+                });
+              }}
+            />
+          );
+        })}
+        <div ref={targetRef} />
       </MessageList>
 
       <InputArea>
@@ -164,7 +311,7 @@ const ChatWindow: React.FC = () => {
             style={{ border: "none", background: "transparent" }}
             placeholder="Type a message..."
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={handleTyping}
           />
           <Button type="submit" style={{ padding: "0.5rem 1.25rem" }}>
             Send

@@ -35,12 +35,16 @@ interface ChatState {
   fetchMessages: (
     conversationId: string,
     params?: { cursor?: string; limit?: number },
+    signal?: AbortSignal,
   ) => Promise<void>;
   conversationPagination: Pick<
     PaginationType,
     "totalResults" | "page" | "limit" | "totalPages" | "results"
   >;
   messagePagination: Pick<PaginationType, "limit" | "hasMore" | "nextCursor">;
+  updateConversation: (conversation: Conversation) => void;
+  addMessage: (message: Message) => void;
+  updateMessage: (message: Message) => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -92,12 +96,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  fetchMessages: async (conversationId, { cursor, limit }) => {
+  fetchMessages: async (conversationId, { cursor, limit }, signal) => {
     set({ isLoading: { ...get().isLoading, messages: true }, error: null });
     try {
       const messages = (await api.get(
         `/conversations/${conversationId}/messages`,
-        { params: { cursor, limit } },
+        { params: { cursor, limit }, signal },
       )) as MessageResponse;
 
       const { data, pagination } = messages;
@@ -142,5 +146,28 @@ export const useChatStore = create<ChatState>((set, get) => ({
         isLoading: { ...get().isLoading, conversationDetails: false },
       });
     }
+  },
+  updateConversation: (conversation) => {
+    set((state) => ({
+      conversations: state.conversations.map((c) =>
+        c._id === conversation._id ? { ...c, ...conversation } : c,
+      ),
+    }));
+  },
+  addMessage: (message) => {
+    const { activeConversationId } = get();
+    if (message.conversationId !== activeConversationId) return;
+    set((state) => ({
+      messages: [...state.messages, message],
+    }));
+  },
+  updateMessage: (message) => {
+    const { activeConversationId } = get();
+    if (message.conversationId !== activeConversationId) return;
+    set((state) => ({
+      messages: state.messages.map((m) =>
+        m._id === message._id ? message : m,
+      ),
+    }));
   },
 }));
