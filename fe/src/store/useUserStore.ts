@@ -34,7 +34,7 @@ export const useUserStore = create<UserState>((set) => ({
         signal,
       })) as UserResponse;
 
-      const { data, pagination } = users.data;
+      const { data, pagination } = users;
 
       if (pagination.page === 1) {
         set({ users: data, userPagination: pagination, isLoading: false });

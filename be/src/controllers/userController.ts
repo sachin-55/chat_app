@@ -63,9 +63,14 @@ export const getAllUsers = catchAsync(async (req: Request, res: Response) => {
     limit = 10,
     page = 1,
   } = getAllUsersQuerySchema.parse(req.query);
+  const { _id: userId } = req?.user || {};
   const filter: QueryFilter<IUser> = {};
   if (search) {
     filter.name = { $regex: search, $options: "i" };
+  }
+
+  if (userId) {
+    filter._id = { $ne: userId };
   }
   const users = await User.find(filter)
     .sort("-createdAt")

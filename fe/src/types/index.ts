@@ -54,28 +54,22 @@ export type PaginationType = {
 };
 
 export interface ConversationListResponse {
-  data: {
-    data: Conversation[];
-    pagination: Pick<
-      PaginationType,
-      "totalResults" | "page" | "limit" | "totalPages" | "results"
-    >;
-  };
+  data: Conversation[];
+  pagination: Pick<
+    PaginationType,
+    "totalResults" | "page" | "limit" | "totalPages" | "results"
+  >;
 }
 
 export interface MessageResponse {
-  data: {
-    data: Message[];
-    pagination: Pick<PaginationType, "limit" | "hasMore" | "nextCursor">;
-  };
+  data: Message[];
+  pagination: Pick<PaginationType, "limit" | "hasMore" | "nextCursor">;
 }
 
 export interface UserResponse {
-  data: {
-    data: User[];
-    pagination: Pick<
-      PaginationType,
-      "totalResults" | "page" | "limit" | "totalPages" | "results"
-    >;
-  };
+  data: User[];
+  pagination: Pick<
+    PaginationType,
+    "totalResults" | "page" | "limit" | "totalPages" | "results"
+  >;
 }

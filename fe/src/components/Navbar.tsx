@@ -12,6 +12,8 @@ const NavContainer = styled.nav`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: sticky;
+  top: 0;
   z-index: 100;
 `;
 
@@ -62,8 +64,8 @@ const Navbar: React.FC = () => {
       <NavLinks>
         {isAuthenticated ? (
           <>
-            {location.pathname !== "/conversation" && (
-              <StyledLink to="/conversation">Go to Conversation</StyledLink>
+            {location.pathname !== "/conversations" && (
+              <StyledLink to="/conversations">Go to Conversation</StyledLink>
             )}
             <span style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
               Hello, {user?.name}

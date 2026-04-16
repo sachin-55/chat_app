@@ -15,11 +15,18 @@ const verifyToken = (token: string): Promise<JwtPayload> => {
   });
 };
 
-export const authenticate = catchAsync(
-  async (req: Request, _res: Response, next: NextFunction) => {
+export const authenticate = ({
+  isOptional = false,
+}: {
+  isOptional?: boolean;
+} = {}) =>
+  catchAsync(async (req: Request, _res: Response, next: NextFunction) => {
     const token = req.cookies.token;
 
     if (!token) {
+      if (isOptional) {
+        return next();
+      }
       throw new UnauthorizedAppError("Invalid Token or token not found.");
     }
 
@@ -34,8 +41,7 @@ export const authenticate = catchAsync(
     req.user = user;
 
     next();
-  },
-);
+  });
 
 export const authenticateSocket = async (
   socket: IExtendedSocket,

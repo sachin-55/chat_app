@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { useChatStore } from "../store/useChatStore";
 import { Avatar, Flex, Input } from "./Common";
 import { useAuthStore } from "../store/useAuthStore";
+import { useNavigate } from "react-router-dom";
 
 const SidebarContainer = styled.div`
   width: 350px;
@@ -69,8 +70,9 @@ const AvatarWrapper = styled.div`
 `;
 
 const Sidebar: React.FC = () => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const { conversations, activeConversation, fetchConversations, isLoading } =
+  const { conversations, activeConversationId, fetchConversations, isLoading } =
     useChatStore();
   const { user } = useAuthStore();
 
@@ -98,7 +100,7 @@ const Sidebar: React.FC = () => {
       </SearchWrapper>
 
       <ListWrapper>
-        {isLoading && (
+        {isLoading?.conversation && (
           <p style={{ textAlign: "center", padding: "1rem" }}>Loading...</p>
         )}
 
@@ -112,11 +114,9 @@ const Sidebar: React.FC = () => {
               onClick={() => {
                 // Create or set conversation logic here
                 // For simplicity, find if a conversation already exists
-                alert("CLICKED ON CONVERSATION");
+                navigate(`/conversations?cid=${conversation._id}`);
               }}
-              $active={activeConversation?.participants.some(
-                (p) => p._id === conversation._id,
-              )}
+              $active={activeConversationId === conversation._id}
             >
               <Flex $gap="0.75rem" $align="center">
                 <AvatarWrapper>
@@ -127,11 +127,10 @@ const Sidebar: React.FC = () => {
                       user.name[0].toUpperCase()
                     )}
                   </Avatar>
-                  <Status $online />
+                  <Status $online={receiverUser.isOnline} />
                 </AvatarWrapper>
                 <div style={{ flex: 1 }}>
                   <UserName>{receiverUser.name}</UserName>
-                  <UserName>{receiverUser.email}</UserName>
                   <LastMsg>{conversation.lastMessage?.text}</LastMsg>
                 </div>
               </Flex>

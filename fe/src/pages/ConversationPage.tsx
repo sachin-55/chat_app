@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import styled from "styled-components";
-import Sidebar from "../components/Sidebar";
 import ChatWindow from "../components/ChatWindow";
 import Navbar from "../components/Navbar";
+import Sidebar from "../components/Sidebar";
+import { useChatStore } from "../store/useChatStore";
 
 const PageContainer = styled.div`
   display: flex;
@@ -19,6 +21,33 @@ const Content = styled.div`
 `;
 
 const ConversationPage: React.FC = () => {
+  const {
+    setActiveConversationId,
+    activeConversationId,
+    fetchConversationDetails,
+  } = useChatStore();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const conversationId = searchParams.get("cid");
+
+  useEffect(() => {
+    if (!conversationId && activeConversationId) {
+      searchParams.set("cid", activeConversationId);
+      setSearchParams(searchParams);
+    }
+  }, [
+    conversationId,
+    activeConversationId,
+    setActiveConversationId,
+    setSearchParams,
+    searchParams,
+  ]);
+
+  useEffect(() => {
+    if (conversationId) {
+      fetchConversationDetails(conversationId);
+    }
+  }, [conversationId, fetchConversationDetails]);
+
   return (
     <PageContainer>
       <Navbar />

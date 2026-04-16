@@ -7,8 +7,12 @@ export const userRoutes = () => {
   router.post("/register", userController.registerUser);
   router.post("/login", userController.loginUser);
 
-  router.get("/", userController.getAllUsers);
+  router.get(
+    "/",
+    authenticate({ isOptional: true }),
+    userController.getAllUsers,
+  );
 
-  router.post("/logout", authenticate, userController.logout);
+  router.post("/logout", authenticate(), userController.logout);
   return router;
 };

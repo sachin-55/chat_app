@@ -41,7 +41,7 @@ const App: React.FC = () => {
           }
         />
         <Route
-          path="/conversation"
+          path="/conversations"
           element={
             <ProtectedRoute>
               <ConversationPage />

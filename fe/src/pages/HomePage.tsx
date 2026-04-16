@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import api from "../api/axios";
 import { Avatar, Button, Card, Input } from "../components/Common";
 import Navbar from "../components/Navbar";
 import { useAuthStore } from "../store/useAuthStore";
@@ -73,7 +74,6 @@ const HomePage: React.FC = () => {
   const { users, fetchUsers, isLoading } = useUserStore();
   const { isAuthenticated } = useAuthStore();
   const [query, setQuery] = useState("");
-
   useEffect(() => {
     const abortController = new AbortController();
     fetchUsers({ limit: 20, page: 1 }, abortController.signal);
@@ -81,19 +81,34 @@ const HomePage: React.FC = () => {
     return () => {
       abortController.abort();
     };
-  }, []);
+  }, [fetchUsers, isAuthenticated]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
   };
 
-  const handleStartConversation = (user: User) => {
+  const getConversation = useCallback(async (userId: string) => {
+    try {
+      const response = await api.post(`/conversations/create`, {
+        recipientId: userId,
+      });
+      if (response) {
+        return response?.data;
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
+  const handleStartConversation = async (user: User) => {
     if (!isAuthenticated) {
       navigate("/login", { state: { from: "/", userId: user._id } });
       return;
     }
 
-    navigate(`/conversation?uid=${user._id}`);
+    const conversation = await getConversation(user._id);
+
+    navigate(`/conversations?cid=${conversation?._id}`);
   };
 
   const displayUsers = users;

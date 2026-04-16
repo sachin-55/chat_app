@@ -5,7 +5,7 @@ import { Router } from "express";
 const router = Router();
 
 export const conversationRoutes = () => {
-  router.use(authenticate);
+  router.use(authenticate());
   router.post("/create", conversationController.createNewConversation);
   router.get("/", conversationController.getConversations);
   router.get("/:conversationId", conversationController.getConversationDetails);

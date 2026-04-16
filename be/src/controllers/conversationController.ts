@@ -1,5 +1,5 @@
 import { Conversation, Message } from "@/database/models";
-import { catchAsync, NotFoundError } from "@/utils";
+import { BadRequestError, catchAsync, NotFoundError } from "@/utils";
 import {
   createConversationSchema,
   getConversationsQuerySchema,
@@ -13,6 +13,11 @@ export const createNewConversation = catchAsync(
     const { _id: userId } = req.user || {};
     const { recipientId } = createConversationSchema.parse(req.body);
 
+    if (recipientId?.toString() === userId?.toString()) {
+      throw new BadRequestError(
+        "You cannot create a conversation with yourself",
+      );
+    }
     let conversation = await Conversation.findOne({
       participantIds: { $all: [userId, recipientId] },
     });
@@ -41,10 +46,10 @@ export const getConversations = catchAsync(
 
     const skip = (Number(page) - 1) * Number(limit);
 
-    const pipeline: any[] = [
+    const pipeline: PipelineStage[] = [
       {
         $match: {
-          participants: userId,
+          participantIds: { $in: [userId] },
         },
       },
 
@@ -87,6 +92,12 @@ export const getConversations = catchAsync(
                 as: "lastMessage",
               },
             },
+            {
+              $unwind: {
+                path: "$lastMessage",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
             { $skip: skip },
             { $limit: Number(limit) },
           ],
@@ -118,17 +129,23 @@ export const getConversationDetails = catchAsync(
   async (req: Request, res: Response) => {
     const { conversationId } = req.params;
 
-    const conversation = await Conversation.findById(conversationId).populate({
-      path: "participants",
-      select: "name email avatar",
-    });
+    const conversation = await Conversation.findById(conversationId)
+      .populate({
+        path: "participantIds",
+        select: "name email avatar",
+      })
+      .lean();
 
     if (!conversation) {
       throw new NotFoundError("Conversation not found");
     }
 
     return res.handleResponse({
-      data: conversation,
+      data: {
+        ...conversation,
+        participants: conversation.participantIds,
+        participantIds: conversation.participantIds.map((p) => p._id),
+      },
     });
   },
 );

@@ -27,7 +27,6 @@ export const GlobalStyles = createGlobalStyle`
   body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
-    overflow: hidden;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
