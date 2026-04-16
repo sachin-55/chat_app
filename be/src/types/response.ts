@@ -2,13 +2,15 @@ import { Response } from "express";
 import { StatusCodesType } from ".";
 
 export type PaginationType = {
-  page: number;
+  page?: number;
   limit: number;
   results?: number;
   totalPages?: number;
   totalResults?: number;
   nextPage?: number | null;
   prevPage?: number | null;
+  nextCursor?: string | null;
+  hasMore?: boolean;
 };
 
 export type ResponseParamsType = {

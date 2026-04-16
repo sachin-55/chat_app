@@ -8,6 +8,12 @@ export interface IUserType {
   lastSeen?: string;
   isOnline: boolean;
   socketId?: string;
+
+  generateAccessToken: () => string;
+  validatePassword: (
+    password: string,
+    hashedPassword: string,
+  ) => Promise<boolean>;
 }
 
 export interface IUser extends Document, IUserType {}

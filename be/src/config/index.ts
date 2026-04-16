@@ -1,3 +1,4 @@
+import { StringValue } from "@/types";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -11,6 +12,10 @@ export const config = {
   DATABASE_URI: process.env.DATABASE_URI || "",
   ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET || "",
   REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET || "",
-  ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY || "15m",
-  REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY || "7d",
+  ACCESS_TOKEN_EXPIRY: (process.env.ACCESS_TOKEN_EXPIRY || "15m") as
+    | number
+    | StringValue,
+  REFRESH_TOKEN_EXPIRY: (process.env.REFRESH_TOKEN_EXPIRY || "7d") as
+    | number
+    | StringValue,
 };
