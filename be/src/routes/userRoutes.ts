@@ -1,6 +1,14 @@
+import { userController } from "@/controllers";
+import { authenticate } from "@/middlewares";
 import { Router } from "express";
 
 const router = Router();
 export const userRoutes = () => {
+  router.post("/register", userController.registerUser);
+  router.post("/login", userController.loginUser);
+
+  router.get("/", userController.getAllUsers);
+
+  router.post("/logout", authenticate, userController.logout);
   return router;
 };
