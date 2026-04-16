@@ -11,3 +11,9 @@ export const loginUserBodySchema = z.object({
   email: z.email({ error: "Invalid email address." }),
   password: z.string(),
 });
+
+export const getAllUsersQuerySchema = z.object({
+  search: z.string().optional(),
+  limit: z.coerce.number().optional(),
+  page: z.coerce.number().optional(),
+});
