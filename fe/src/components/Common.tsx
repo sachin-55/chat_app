@@ -105,5 +105,20 @@ export const Flex = styled.div<{ $direction?: string; $justify?: string; $align?
   flex-direction: ${({ $direction }) => $direction || 'row'};
   justify-content: ${({ $justify }) => $justify || 'flex-start'};
   align-items: ${({ $align }) => $align || 'stretch'};
-  gap: ${({ $gap }) => $gap || '0'};
+  gap: ${({ $gap }) => $gap || "0"};
+`;
+
+export const ErrorText = styled.span`
+  color: var(--error);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  display: block;
+  animation: fadeIn 0.2s ease;
+`;
+
+export const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
 `;

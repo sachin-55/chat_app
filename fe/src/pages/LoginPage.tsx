@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { Button, Card, Input } from "../components/Common";
+import { useFormik } from "formik";
+import { Button, Card, Input, ErrorText, FormGroup } from "../components/Common";
 import { useAuthStore } from "../store/useAuthStore";
+import { loginSchema } from "../utils/validationSchemas";
 
 const AuthContainer = styled.div`
   height: 100vh;
@@ -44,12 +46,12 @@ const Subtitle = styled.p`
 
 const Label = styled.label`
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.1rem;
   color: var(--text-secondary);
   font-size: 0.85rem;
 `;
 
-const ErrorMsg = styled.p`
+const GlobalErrorMsg = styled.p`
   color: var(--error);
   font-size: 0.85rem;
   margin-bottom: 1rem;
@@ -77,23 +79,26 @@ const RedirectLink = styled.div`
 `;
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const { login, isLoading, error, setError } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await login({ email, password });
-
-      const from = location.state?.from || "/conversation";
-      navigate(from, { replace: true });
-    } catch (err) {
-      console.error("LOGIN ->", err);
-    }
-  };
+  const formik = useFormik({
+    initialValues: {
+      email: "",
+      password: "",
+    },
+    validationSchema: loginSchema,
+    onSubmit: async (values) => {
+      try {
+        await login(values);
+        const from = location.state?.from || "/conversations";
+        navigate(from, { replace: true });
+      } catch (err) {
+        console.error("LOGIN ->", err);
+      }
+    },
+  });
 
   return (
     <AuthContainer>
@@ -101,32 +106,36 @@ const LoginPage: React.FC = () => {
         <Title>Welcome Back</Title>
         <Subtitle>Enter your credentials to continue</Subtitle>
 
-        {error && <ErrorMsg>{error}</ErrorMsg>}
+        {error && <GlobalErrorMsg>{error}</GlobalErrorMsg>}
 
-        <Form onSubmit={handleSubmit}>
-          <div>
+        <Form onSubmit={formik.handleSubmit}>
+          <FormGroup>
             <Label>Email Address</Label>
             <Input
+              id="email"
               type="email"
               placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              {...formik.getFieldProps("email")}
             />
-          </div>
+            {formik.touched.email && formik.errors.email ? (
+              <ErrorText>{formik.errors.email}</ErrorText>
+            ) : null}
+          </FormGroup>
 
-          <div>
+          <FormGroup>
             <Label>Password</Label>
             <Input
+              id="password"
               type="password"
               placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              {...formik.getFieldProps("password")}
             />
-          </div>
+            {formik.touched.password && formik.errors.password ? (
+              <ErrorText>{formik.errors.password}</ErrorText>
+            ) : null}
+          </FormGroup>
 
-          <Button type="submit" disabled={isLoading}>
+          <Button type="submit" disabled={isLoading || !formik.isValid}>
             {isLoading ? "Signing in..." : "Sign In"}
           </Button>
         </Form>

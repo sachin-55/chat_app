@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
-import { Button, Card, Input } from "../components/Common";
+import { useFormik } from "formik";
+import { Button, Card, Input, ErrorText, FormGroup } from "../components/Common";
 import { useAuthStore } from "../store/useAuthStore";
+import { registerSchema } from "../utils/validationSchemas";
 
 const AuthContainer = styled.div`
   height: 100vh;
@@ -44,12 +46,12 @@ const Subtitle = styled.p`
 
 const Label = styled.label`
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.1rem;
   color: var(--text-secondary);
   font-size: 0.85rem;
 `;
 
-const ErrorMsg = styled.p`
+const GlobalErrorMsg = styled.p`
   color: var(--error);
   font-size: 0.85rem;
   margin-bottom: 1rem;
@@ -77,32 +79,28 @@ const RedirectLink = styled.div`
 `;
 
 const RegisterPage: React.FC = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
-
   const { register, isLoading, error, setError } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await register(formData);
-
-      const from = location.state?.from || "/conversation";
-      navigate(from, { replace: true });
-    } catch (err) {
-      console.log(err);
-      // Error handled by store
-    }
-  };
+  const formik = useFormik({
+    initialValues: {
+      name: "",
+      email: "",
+      password: "",
+      avatar: "",
+    },
+    validationSchema: registerSchema,
+    onSubmit: async (values) => {
+      try {
+        await register(values);
+        const from = location.state?.from || "/conversations";
+        navigate(from, { replace: true });
+      } catch (err) {
+        console.error("REGISTER ->", err);
+      }
+    },
+  });
 
   return (
     <AuthContainer>
@@ -110,45 +108,60 @@ const RegisterPage: React.FC = () => {
         <Title>Create Account</Title>
         <Subtitle>Join our premium chat experience</Subtitle>
 
-        {error && <ErrorMsg>{error}</ErrorMsg>}
+        {error && <GlobalErrorMsg>{error}</GlobalErrorMsg>}
 
-        <Form onSubmit={handleSubmit}>
-          <div>
+        <Form onSubmit={formik.handleSubmit}>
+          <FormGroup>
             <Label>Full Name</Label>
             <Input
-              name="name"
+              id="name"
               placeholder="John Doe"
-              value={formData.name}
-              onChange={handleChange}
-              required
+              {...formik.getFieldProps("name")}
             />
-          </div>
+            {formik.touched.name && formik.errors.name ? (
+              <ErrorText>{formik.errors.name}</ErrorText>
+            ) : null}
+          </FormGroup>
 
-          <div>
+          <FormGroup>
             <Label>Email Address</Label>
             <Input
-              name="email"
+              id="email"
               type="email"
               placeholder="name@example.com"
-              value={formData.email}
-              onChange={handleChange}
-              required
+              {...formik.getFieldProps("email")}
             />
-          </div>
+            {formik.touched.email && formik.errors.email ? (
+              <ErrorText>{formik.errors.email}</ErrorText>
+            ) : null}
+          </FormGroup>
 
-          <div>
+          <FormGroup>
             <Label>Password</Label>
             <Input
-              name="password"
+              id="password"
               type="password"
               placeholder="••••••••"
-              value={formData.password}
-              onChange={handleChange}
-              required
+              {...formik.getFieldProps("password")}
             />
-          </div>
+            {formik.touched.password && formik.errors.password ? (
+              <ErrorText>{formik.errors.password}</ErrorText>
+            ) : null}
+          </FormGroup>
 
-          <Button type="submit" disabled={isLoading}>
+          <FormGroup>
+            <Label>Avatar URL (Optional)</Label>
+            <Input
+              id="avatar"
+              placeholder="https://example.com/photo.jpg"
+              {...formik.getFieldProps("avatar")}
+            />
+            {formik.touched.avatar && formik.errors.avatar ? (
+              <ErrorText>{formik.errors.avatar}</ErrorText>
+            ) : null}
+          </FormGroup>
+
+          <Button type="submit" disabled={isLoading || !formik.isValid}>
             {isLoading ? "Creating account..." : "Create Account"}
           </Button>
         </Form>

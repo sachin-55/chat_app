@@ -11,11 +11,13 @@
   },
   "dependencies": {
     "axios": "^1.15.0",
+    "formik": "^2.4.9",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.14.1",
     "socket.io-client": "^4.8.3",
     "styled-components": "^6.4.0",
+    "yup": "^1.7.1",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
