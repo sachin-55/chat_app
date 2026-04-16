@@ -2,7 +2,7 @@ import { config } from "@/config";
 import { User } from "@/database/models";
 import { IExtendedSocket } from "@/types/socket";
 import { catchAsync, UnauthorizedAppError } from "@/utils";
-import cookie from "cookie";
+import * as cookie from "cookie";
 import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
@@ -17,8 +17,10 @@ const verifyToken = (token: string): Promise<JwtPayload> => {
 
 export const authenticate = ({
   isOptional = false,
+  isLogout = false,
 }: {
   isOptional?: boolean;
+  isLogout?: boolean;
 } = {}) =>
   catchAsync(async (req: Request, _res: Response, next: NextFunction) => {
     const token = req.cookies.token;
@@ -30,7 +32,15 @@ export const authenticate = ({
       throw new UnauthorizedAppError("Invalid Token or token not found.");
     }
 
-    const decodedToken = await verifyToken(token);
+    let decodedToken: JwtPayload;
+    try {
+      decodedToken = await verifyToken(token);
+    } catch (error) {
+      if (isLogout) {
+        return next();
+      }
+      throw new UnauthorizedAppError("Invalid Token or token not found.");
+    }
 
     const userId = decodedToken?.id;
     const user = await User.findById(userId);

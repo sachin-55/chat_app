@@ -4,6 +4,7 @@ import { useChatStore } from "../store/useChatStore";
 import { Avatar, Flex, Input } from "./Common";
 import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate } from "react-router-dom";
+import { useSocket } from "../context/socketProvider";
 
 const SidebarContainer = styled.div`
   width: 350px;
@@ -75,6 +76,7 @@ const Sidebar: React.FC = () => {
   const { conversations, activeConversationId, fetchConversations, isLoading } =
     useChatStore();
   const { user } = useAuthStore();
+  const { userStatus } = useSocket();
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -127,7 +129,9 @@ const Sidebar: React.FC = () => {
                       user.name[0].toUpperCase()
                     )}
                   </Avatar>
-                  <Status $online={receiverUser.isOnline} />
+                  <Status
+                    $online={userStatus?.get(receiverUser._id)?.isOnline}
+                  />
                 </AvatarWrapper>
                 <div style={{ flex: 1 }}>
                   <UserName>{receiverUser.name}</UserName>

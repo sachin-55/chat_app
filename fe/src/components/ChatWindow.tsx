@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { Avatar, Flex, Input, Button } from "./Common";
+import { useSocket } from "../context/socketProvider";
 
 const ChatContainer = styled.div`
   flex: 1;
@@ -74,7 +75,7 @@ const ChatWindow: React.FC = () => {
   const { user: currentUser } = useAuthStore();
   const [text, setText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
+  const { userStatus } = useSocket();
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({
       behavior: "smooth",
@@ -130,7 +131,7 @@ const ChatWindow: React.FC = () => {
           </Avatar>
           <div>
             <h4 style={{ margin: 0 }}>{otherParticipant.name}</h4>
-            {otherParticipant?.isOnline ? (
+            {userStatus?.get(otherParticipant._id)?.isOnline ? (
               <span style={{ fontSize: "0.8rem", color: "var(--success)" }}>
                 Online
               </span>

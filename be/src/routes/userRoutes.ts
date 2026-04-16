@@ -13,6 +13,10 @@ export const userRoutes = () => {
     userController.getAllUsers,
   );
 
-  router.post("/logout", authenticate(), userController.logout);
+  router.post(
+    "/logout",
+    authenticate({ isLogout: true }),
+    userController.logout,
+  );
   return router;
 };

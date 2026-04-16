@@ -91,9 +91,9 @@ export const checkIfHasJoinedRoom = (socket: Socket, room: string) => {
   return isConnectedToRoom;
 };
 
-export const getUserStatus = async (participantUserRoleKeys: string[]) => {
+export const getUserStatus = async (participantIds: string[]) => {
   const userStatus = await User.find({
-    _id: { $in: participantUserRoleKeys },
+    _id: { $in: participantIds },
   }).select("isOnline lastSeen _id");
   return userStatus;
 };

@@ -24,6 +24,7 @@ export const initSocket = (server: HttpServer) => {
   mainNamespace = socketIO.of("/");
 
   mainNamespace.use(authenticateSocket).on("connection", async (socket) => {
+    console.log("User connected :: ", socket.id);
     await handleNewConnection(socket);
   });
 };
