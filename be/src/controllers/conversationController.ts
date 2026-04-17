@@ -1,7 +1,10 @@
+import { IUser } from "@/database/interface/user";
+import dayjs from "dayjs";
 import { Conversation, Message } from "@/database/models";
 import { BadRequestError, catchAsync, NotFoundError } from "@/utils";
 import {
   createConversationSchema,
+  exportConversationParamsSchema,
   getConversationsQuerySchema,
   getMessagesSchema,
 } from "@/zodValidation/conversationSchema";
@@ -233,3 +236,76 @@ export const getMessages = catchAsync(async (req: Request, res: Response) => {
     },
   });
 });
+
+export const exportConversation = catchAsync(
+  async (req: Request, res: Response) => {
+    const {
+      params: { conversationId, type },
+    } = exportConversationParamsSchema.parse(req);
+
+    const conversation = await Conversation.findById(conversationId);
+
+    if (!conversation) {
+      throw new NotFoundError("Conversation not found");
+    }
+
+    const dateFormatter = (date: Date | string | undefined) =>
+      date ? dayjs(date).format("YYYY-MM-DD HH:mm:ss") : "-";
+    const messages = await Message.find({
+      conversationId,
+    })
+      .populate({ path: "senderId", select: "name email" })
+      .populate({ path: "receiverId", select: "name email" });
+
+    if (type === "csv") {
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=conversation-${conversationId}.csv`,
+      );
+      res.write("text,sender,sentAt,deliveredAt,readAt,receiver\n");
+
+      for (const message of messages) {
+        const sender = message.senderId as unknown as IUser;
+        const receiver = message.receiverId as unknown as IUser;
+
+        const row = [
+          message.text,
+          sender.name,
+          dateFormatter(message.sentAt),
+          dateFormatter(message.deliveredAt),
+          dateFormatter(message.readAt),
+          receiver.name,
+        ]
+          .map((v) => `"${String(v || "").replace(/"/g, '""')}"`)
+          .join(",");
+
+        res.write(row + "\n");
+      }
+
+      return res.end();
+    }
+
+    if (type === "json") {
+      const json = messages.map((message) => {
+        const sender = message?.senderId as unknown as IUser;
+        const receiver = message?.receiverId as unknown as IUser;
+        return {
+          text: message.text,
+          sender: sender.name,
+          sentAt: dateFormatter(message?.sentAt),
+          deliveredAt: dateFormatter(message?.deliveredAt),
+          readAt: dateFormatter(message?.readAt),
+          receiver: receiver.name,
+        };
+      });
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename=conversation-${conversationId}.json`,
+      );
+
+      return res.send(JSON.stringify(json, null, 2));
+    }
+  },
+);

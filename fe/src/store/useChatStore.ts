@@ -17,6 +17,7 @@ interface ChatState {
     conversation: boolean;
     messages: boolean;
     conversationDetails: boolean;
+    download?: boolean;
   };
   error: string | null;
   setActiveConversationId: (id: string) => void;
@@ -45,6 +46,10 @@ interface ChatState {
   updateConversation: (conversation: Conversation) => void;
   addMessage: (message: Message) => void;
   updateMessage: (message: Message) => void;
+  exportConversation: (
+    conversationId: string,
+    type: "csv" | "json",
+  ) => Promise<void>;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -169,5 +174,28 @@ export const useChatStore = create<ChatState>((set, get) => ({
         m._id === message._id ? message : m,
       ),
     }));
+  },
+  exportConversation: async (conversationId, type) => {
+    set({ isLoading: { ...get().isLoading, download: true }, error: null });
+    try {
+      const response = await api.get(
+        `/conversations/${conversationId}/export/${type}`,
+        { responseType: "blob" },
+      );
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `conversation-${conversationId}.${type}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      set({ isLoading: { ...get().isLoading, download: false } });
+    } catch (error) {
+      set({
+        error: error.message || "Failed to export conversation",
+        isLoading: { ...get().isLoading, download: false },
+      });
+    }
   },
 }));

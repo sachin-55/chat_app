@@ -36,6 +36,7 @@ const ChatWindow: React.FC = () => {
     fetchMessages,
     messagePagination,
     isLoading,
+    exportConversation,
   } = useChatStore();
   const { user: currentUser } = useAuthStore();
   const [text, setText] = useState("");
@@ -270,6 +271,22 @@ const ChatWindow: React.FC = () => {
               </span>
             )}
           </div>
+        </Flex>
+        <Flex $gap="1rem">
+          <Button
+            $variant="outline"
+            onClick={() => exportConversation(activeConversationId, "csv")}
+            disabled={isLoading?.download}
+          >
+            {isLoading?.download ? "Downloading..." : "CSV"}
+          </Button>
+          <Button
+            $variant="outline"
+            onClick={() => exportConversation(activeConversationId, "json")}
+            disabled={isLoading?.download}
+          >
+            {isLoading?.download ? "Downloading..." : "JSON"}
+          </Button>
         </Flex>
       </ChatHeader>
 

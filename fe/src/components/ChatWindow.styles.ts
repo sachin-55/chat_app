@@ -13,6 +13,9 @@ export const ChatHeader = styled.div`
   border-bottom: 1px solid var(--border);
   background: var(--glass-bg);
   backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 `;
 
 export const MessageList = styled.div`

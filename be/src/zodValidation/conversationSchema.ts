@@ -19,3 +19,10 @@ export const getMessagesSchema = z.object({
     limit: z.coerce.number().optional(),
   }),
 });
+
+export const exportConversationParamsSchema = z.object({
+  params: z.object({
+    conversationId: z.string(),
+    type: z.enum(["csv", "json"]),
+  }),
+});

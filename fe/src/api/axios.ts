@@ -13,7 +13,12 @@ const api = axios.create({
 
 // Response Interceptor for Error Handling
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    if (response.config.responseType === "blob") {
+      return response;
+    }
+    return response.data;
+  },
   (error) => {
     if (error.response?.status === 401) {
       const { logout } = useAuthStore.getState(); // ✅ correct

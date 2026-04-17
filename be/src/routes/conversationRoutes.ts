@@ -10,6 +10,10 @@ export const conversationRoutes = () => {
   router.get("/", conversationController.getConversations);
   router.get("/:conversationId", conversationController.getConversationDetails);
   router.get("/:conversationId/messages", conversationController.getMessages);
+  router.get(
+    "/:conversationId/export/:type",
+    conversationController.exportConversation,
+  );
 
   return router;
 };
