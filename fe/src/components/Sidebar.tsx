@@ -47,12 +47,13 @@ const UserName = styled.p`
   font-size: 0.95rem;
 `;
 
-const LastMsg = styled.p`
-  font-size: 0.8rem;
+const LastMsg = styled.p<{ $isRead?: boolean }>`
+  font-size: ${({ $isRead }) => ($isRead ? "0.8rem" : "0.9rem")};
   color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: ${({ $isRead }) => ($isRead ? "normal" : "bold")};
 `;
 
 const Status = styled.div<{ $online?: boolean }>`
@@ -92,7 +93,7 @@ const Sidebar: React.FC = () => {
     setSearch(query);
   };
   const getStatusIcon = (message: Message) => {
-    if (message.senderId !== user._id) return null;
+    if (message?.senderId !== user._id) return null;
     switch (message.status) {
       case "SENT":
         return "✓";
@@ -124,6 +125,7 @@ const Sidebar: React.FC = () => {
           const receiverUser = conversation?.participants?.find(
             (p) => p._id !== user?._id,
           );
+          const myUnreadCounts = conversation?.unreadCounts?.[user?._id];
           return (
             <ItemCard
               key={conversation._id}
@@ -147,13 +149,38 @@ const Sidebar: React.FC = () => {
                     $online={userStatus?.get(receiverUser?._id)?.isOnline}
                   />
                 </AvatarWrapper>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, maxWidth: "70%" }}>
                   <UserName>{receiverUser?.name}</UserName>
-                  <LastMsg>{conversation.lastMessage?.text}</LastMsg>
+                  <LastMsg
+                    $isRead={
+                      conversation?.lastMessage?.senderId === user?._id
+                        ? true
+                        : conversation?.lastMessage?.status === "READ"
+                    }
+                  >
+                    {conversation.lastMessage?.text}
+                  </LastMsg>
                   <span style={{ marginRight: "4px" }}>
                     {getStatusIcon(conversation.lastMessage)}
                   </span>
                 </div>
+                {myUnreadCounts > 0 && (
+                  <Flex
+                    $align="center"
+                    $justify="center"
+                    style={{
+                      backgroundColor: "var(--error)",
+                      color: "var(--text-primary)",
+                      borderRadius: "50%",
+                      flexShrink: 0,
+                      fontSize: "0.75rem",
+                      height: "30px",
+                      width: "30px",
+                    }}
+                  >
+                    {myUnreadCounts}
+                  </Flex>
+                )}
               </Flex>
             </ItemCard>
           );

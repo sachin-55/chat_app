@@ -149,43 +149,43 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     [emitEvent],
   );
 
-  // useEffect(() => {
-  //   if (!socketRef.current || !isAuthenticated) return;
+  useEffect(() => {
+    if (!socketRef.current || !isAuthenticated) return;
 
-  //   const participantIds = activeParticipants?.length
-  //     ? activeParticipants
-  //     : Array.from(
-  //         new Set(
-  //           conversations.flatMap((conversation) => {
-  //             return conversation.participantIds;
-  //           }),
-  //         ),
-  //       );
-  //   const interval = setInterval(() => {
-  //     checkParticipantsStatus(participantIds);
-  //   }, 5000); // every 5s
+    const participantIds = activeParticipants?.length
+      ? activeParticipants
+      : Array.from(
+          new Set(
+            conversations.flatMap((conversation) => {
+              return conversation.participantIds;
+            }),
+          ),
+        );
+    const interval = setInterval(() => {
+      checkParticipantsStatus(participantIds);
+    }, 5000); // every 5s
 
-  //   return () => clearInterval(interval);
-  // }, [
-  //   activeParticipants,
-  //   checkParticipantsStatus,
-  //   isAuthenticated,
-  //   conversations,
-  // ]);
+    return () => clearInterval(interval);
+  }, [
+    activeParticipants,
+    checkParticipantsStatus,
+    isAuthenticated,
+    conversations,
+  ]);
 
-  // // Function to handle heartbeat
-  // useEffect(() => {
-  //   const socket = socketRef.current;
-  //   if (!socket || !isAuthenticated) return;
+  // Function to handle heartbeat
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket || !isAuthenticated) return;
 
-  //   const interval = setInterval(() => {
-  //     if (socket.connected) {
-  //       socket.emit("heartbeat");
-  //     }
-  //   }, 15000);
+    const interval = setInterval(() => {
+      if (socket.connected) {
+        socket.emit("heartbeat");
+      }
+    }, 15000);
 
-  //   return () => clearInterval(interval);
-  // }, [isAuthenticated]);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   const updateChatStatus = useCallback(
     async (data: {
