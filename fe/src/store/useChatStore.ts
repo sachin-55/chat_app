@@ -40,7 +40,7 @@ interface ChatState {
   ) => Promise<void>;
   conversationPagination: Pick<
     PaginationType,
-    "totalResults" | "page" | "limit" | "totalPages" | "results"
+    "totalResults" | "page" | "limit" | "totalPages" | "results" | "hasMore"
   >;
   messagePagination: Pick<PaginationType, "limit" | "hasMore" | "nextCursor">;
   updateConversation: (conversation: Conversation) => void;
@@ -154,9 +154,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
   updateConversation: (conversation) => {
     set((state) => ({
-      conversations: state.conversations.map((c) =>
-        c._id === conversation._id ? { ...c, ...conversation } : c,
-      ),
+      conversations: state.conversations
+        .map((c) =>
+          c._id === conversation._id ? { ...c, ...conversation } : c,
+        )
+        .sort(
+          (a, b) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+        ),
     }));
   },
   addMessage: (message) => {

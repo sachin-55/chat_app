@@ -83,6 +83,7 @@ export const getAllUsers = catchAsync(async (req: Request, res: Response) => {
     limit,
     totalPages: Math.ceil(counts / limit),
     results: users.length,
+    hasMore: page < Math.ceil(counts / limit),
   };
 
   return res.handleResponse({ data: users, pagination });

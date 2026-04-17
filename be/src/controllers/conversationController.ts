@@ -114,7 +114,7 @@ export const getConversations = catchAsync(
 
     const conversations = result[0]?.data || [];
     const total = result[0]?.metadata[0]?.total || 0;
-
+    const totalPages = Math.ceil(total / limit);
     return res.handleResponse({
       data: conversations,
       pagination: {
@@ -122,7 +122,8 @@ export const getConversations = catchAsync(
         totalResults: total,
         page: Number(page),
         limit: Number(limit),
-        totalPages: Math.ceil(total / limit),
+        totalPages,
+        hasMore: Number(page) < totalPages,
       },
     });
   },

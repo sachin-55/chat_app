@@ -16,7 +16,7 @@ interface UserState {
   ) => Promise<void>;
   userPagination: Pick<
     PaginationType,
-    "totalResults" | "page" | "limit" | "totalPages" | "results"
+    "totalResults" | "page" | "limit" | "totalPages" | "results" | "hasMore"
   >;
 }
 

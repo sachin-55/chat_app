@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import { useChatStore } from "../store/useChatStore";
 import { Avatar, Flex, Input } from "./Common";
@@ -6,6 +6,8 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate } from "react-router-dom";
 import { useSocket } from "../context/socketProvider";
 import type { Message } from "../types";
+import { debounce } from "../utils/debounce";
+import { useIntersectionObserver } from "../hooks/useIntersectionObserver";
 
 const SidebarContainer = styled.div`
   width: 350px;
@@ -25,6 +27,7 @@ const ListWrapper = styled.div`
   flex: 1;
   overflow-y: auto;
   padding: 0.5rem;
+  padding-bottom: 100px;
 `;
 
 const ItemCard = styled.div<{ $active?: boolean }>`
@@ -75,22 +78,53 @@ const AvatarWrapper = styled.div`
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const { conversations, activeConversationId, fetchConversations, isLoading } =
-    useChatStore();
+  const {
+    conversations,
+    activeConversationId,
+    fetchConversations,
+    isLoading,
+    conversationPagination,
+  } = useChatStore();
   const { user } = useAuthStore();
   const { userStatus } = useSocket();
 
+  const { isIntersecting, targetRef } = useIntersectionObserver<HTMLDivElement>(
+    {
+      enabled: conversationPagination.hasMore && !isLoading.conversation,
+      options: { rootMargin: "20px", threshold: 0.5 },
+    },
+  );
+
   useEffect(() => {
     const abortController = new AbortController();
-    fetchConversations({ limit: 20, page: 1 }, abortController.signal);
+    fetchConversations({ limit: 10, page: 1 }, abortController.signal);
     return () => {
       abortController.abort();
     };
   }, []);
 
+  useEffect(() => {
+    if (
+      isIntersecting &&
+      conversationPagination?.hasMore &&
+      !isLoading.conversation
+    ) {
+      fetchConversations({ limit: 10, page: conversationPagination.page + 1 });
+    }
+  }, [isIntersecting]);
+
+  const delayedFetchConversations = useMemo(
+    () =>
+      debounce((query: string) => {
+        fetchConversations({ limit: 20, page: 1, search: query });
+      }, 500),
+    [fetchConversations],
+  );
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearch(query);
+    delayedFetchConversations(query);
   };
   const getStatusIcon = (message: Message) => {
     if (message?.senderId !== user._id) return null;
@@ -121,70 +155,80 @@ const Sidebar: React.FC = () => {
           <p style={{ textAlign: "center", padding: "1rem" }}>Loading...</p>
         )}
 
-        {conversations.map((conversation) => {
-          const receiverUser = conversation?.participants?.find(
-            (p) => p._id !== user?._id,
-          );
-          const myUnreadCounts = conversation?.unreadCounts?.[user?._id];
-          return (
-            <ItemCard
-              key={conversation._id}
-              onClick={() => {
-                // Create or set conversation logic here
-                // For simplicity, find if a conversation already exists
-                navigate(`/conversations?cid=${conversation._id}`);
-              }}
-              $active={activeConversationId === conversation._id}
-            >
-              <Flex $gap="0.75rem" $align="center">
-                <AvatarWrapper>
-                  <Avatar $size="45px">
-                    {user.avatar ? (
-                      <img src={user.avatar} alt={user.name} />
-                    ) : (
-                      user.name[0].toUpperCase()
-                    )}
-                  </Avatar>
-                  <Status
-                    $online={userStatus?.get(receiverUser?._id)?.isOnline}
-                  />
-                </AvatarWrapper>
-                <div style={{ flex: 1, maxWidth: "70%" }}>
-                  <UserName>{receiverUser?.name}</UserName>
-                  <LastMsg
-                    $isRead={
-                      conversation?.lastMessage?.senderId === user?._id
-                        ? true
-                        : conversation?.lastMessage?.status === "READ"
-                    }
-                  >
-                    {conversation.lastMessage?.text}
-                  </LastMsg>
-                  <span style={{ marginRight: "4px" }}>
-                    {getStatusIcon(conversation.lastMessage)}
-                  </span>
-                </div>
-                {myUnreadCounts > 0 && (
-                  <Flex
-                    $align="center"
-                    $justify="center"
-                    style={{
-                      backgroundColor: "var(--error)",
-                      color: "var(--text-primary)",
-                      borderRadius: "50%",
-                      flexShrink: 0,
-                      fontSize: "0.75rem",
-                      height: "30px",
-                      width: "30px",
-                    }}
-                  >
-                    {myUnreadCounts}
-                  </Flex>
-                )}
-              </Flex>
-            </ItemCard>
-          );
-        })}
+        {conversations?.length === 0 ? (
+          <p style={{ textAlign: "center", padding: "1rem" }}>
+            No conversations found
+          </p>
+        ) : (
+          conversations.map((conversation) => {
+            const receiverUser = conversation?.participants?.find(
+              (p) => p._id !== user?._id,
+            );
+            const myUnreadCounts = conversation?.unreadCounts?.[user?._id];
+            return (
+              <ItemCard
+                key={conversation._id}
+                onClick={() => {
+                  // Create or set conversation logic here
+                  // For simplicity, find if a conversation already exists
+                  navigate(`/conversations?cid=${conversation._id}`);
+                }}
+                $active={activeConversationId === conversation._id}
+              >
+                <Flex $gap="0.75rem" $align="center">
+                  <AvatarWrapper>
+                    <Avatar $size="45px">
+                      {receiverUser.avatar ? (
+                        <img
+                          src={receiverUser.avatar}
+                          alt={receiverUser.name}
+                        />
+                      ) : (
+                        receiverUser.name[0].toUpperCase()
+                      )}
+                    </Avatar>
+                    <Status
+                      $online={userStatus?.get(receiverUser?._id)?.isOnline}
+                    />
+                  </AvatarWrapper>
+                  <div style={{ flex: 1, maxWidth: "70%" }}>
+                    <UserName>{receiverUser?.name}</UserName>
+                    <LastMsg
+                      $isRead={
+                        conversation?.lastMessage?.senderId === user?._id
+                          ? true
+                          : conversation?.lastMessage?.status === "READ"
+                      }
+                    >
+                      {conversation.lastMessage?.text}
+                    </LastMsg>
+                    <span style={{ marginRight: "4px" }}>
+                      {getStatusIcon(conversation.lastMessage)}
+                    </span>
+                  </div>
+                  {myUnreadCounts > 0 && (
+                    <Flex
+                      $align="center"
+                      $justify="center"
+                      style={{
+                        backgroundColor: "var(--error)",
+                        color: "var(--text-primary)",
+                        borderRadius: "50%",
+                        flexShrink: 0,
+                        fontSize: "0.75rem",
+                        height: "30px",
+                        width: "30px",
+                      }}
+                    >
+                      {myUnreadCounts}
+                    </Flex>
+                  )}
+                </Flex>
+              </ItemCard>
+            );
+          })
+        )}
+        <div ref={targetRef} />
       </ListWrapper>
     </SidebarContainer>
   );

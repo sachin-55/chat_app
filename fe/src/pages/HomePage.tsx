@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import api from "../api/axios";
@@ -7,6 +7,8 @@ import Navbar from "../components/Navbar";
 import { useAuthStore } from "../store/useAuthStore";
 import { useUserStore } from "../store/useUserStore";
 import type { User } from "../types";
+import { debounce } from "../utils/debounce";
+import { useIntersectionObserver } from "../hooks/useIntersectionObserver";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -71,20 +73,43 @@ const SearchContainer = styled.div`
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { users, fetchUsers, isLoading } = useUserStore();
+  const { users, fetchUsers, isLoading, userPagination } = useUserStore();
   const { isAuthenticated } = useAuthStore();
   const [query, setQuery] = useState("");
+
+  const { isIntersecting, targetRef } = useIntersectionObserver<HTMLDivElement>(
+    {
+      enabled: userPagination.hasMore && !isLoading,
+      options: { rootMargin: "20px", threshold: 0.5 },
+    },
+  );
+
   useEffect(() => {
     const abortController = new AbortController();
-    fetchUsers({ limit: 20, page: 1 }, abortController.signal);
+    fetchUsers({ limit: 8, page: 1 }, abortController.signal);
 
     return () => {
       abortController.abort();
     };
   }, [fetchUsers, isAuthenticated]);
 
+  useEffect(() => {
+    if (isIntersecting && userPagination.hasMore && !isLoading) {
+      fetchUsers({ limit: 8, page: userPagination.page + 1 });
+    }
+  }, [isIntersecting]);
+
+  const delayedFetchUsers = useMemo(
+    () =>
+      debounce((query: string) => {
+        fetchUsers({ limit: 8, page: 1, search: query });
+      }, 500),
+    [fetchUsers],
+  );
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
+    delayedFetchUsers(e.target.value);
   };
 
   const getConversation = useCallback(async (userId: string) => {
@@ -135,7 +160,11 @@ const HomePage: React.FC = () => {
         {isLoading && (
           <p style={{ gridColumn: "1/-1", textAlign: "center" }}>Loading...</p>
         )}
-        {!isLoading &&
+        {!isLoading && displayUsers?.length === 0 ? (
+          <p style={{ gridColumn: "1/-1", textAlign: "center" }}>
+            No users found
+          </p>
+        ) : (
           displayUsers.map((user) => (
             <UserCard key={user._id}>
               <Avatar $size="80px">
@@ -153,7 +182,9 @@ const HomePage: React.FC = () => {
                 Start Conversation
               </Button>
             </UserCard>
-          ))}
+          ))
+        )}
+        {!isLoading && <div ref={targetRef} />}
       </UserGrid>
     </PageContainer>
   );
