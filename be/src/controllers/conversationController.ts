@@ -250,7 +250,7 @@ export const exportConversation = catchAsync(
     }
 
     const dateFormatter = (date: Date | string | undefined) =>
-      date ? dayjs(date).format("YYYY-MM-DD HH:mm:ss") : "-";
+      date ? dayjs(date).format("YYYY-MM-DD HH:mm:ss").toString() : "-";
     const messages = await Message.find({
       conversationId,
     })

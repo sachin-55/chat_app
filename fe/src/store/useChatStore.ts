@@ -182,7 +182,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         `/conversations/${conversationId}/export/${type}`,
         { responseType: "blob" },
       );
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = window.URL.createObjectURL(response.data);
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", `conversation-${conversationId}.${type}`);
