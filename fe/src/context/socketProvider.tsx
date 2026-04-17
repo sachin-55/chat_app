@@ -9,6 +9,7 @@ import {
 import { io, Socket } from "socket.io-client";
 import { useAuthStore } from "../store/useAuthStore";
 import { useChatStore } from "../store/useChatStore";
+import type { Conversation, Message } from "../types";
 
 interface ParticipantStatus {
   isOnline: boolean;
@@ -36,7 +37,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   > | null>(null);
   const [isSocketConnected, setIsSocketConnected] = useState<boolean>(false);
   const [activeParticipants, setActiveParticipants] = useState<string[]>([]);
-  const { conversations } = useChatStore();
+  const { conversations, updateConversation, activeConversationId } =
+    useChatStore();
 
   const socketRef = useRef<Socket | null>(null);
   const eventQueue = useRef<{ event: string; data: unknown }[]>([]);
@@ -147,43 +149,80 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     [emitEvent],
   );
 
+  // useEffect(() => {
+  //   if (!socketRef.current || !isAuthenticated) return;
+
+  //   const participantIds = activeParticipants?.length
+  //     ? activeParticipants
+  //     : Array.from(
+  //         new Set(
+  //           conversations.flatMap((conversation) => {
+  //             return conversation.participantIds;
+  //           }),
+  //         ),
+  //       );
+  //   const interval = setInterval(() => {
+  //     checkParticipantsStatus(participantIds);
+  //   }, 5000); // every 5s
+
+  //   return () => clearInterval(interval);
+  // }, [
+  //   activeParticipants,
+  //   checkParticipantsStatus,
+  //   isAuthenticated,
+  //   conversations,
+  // ]);
+
+  // // Function to handle heartbeat
+  // useEffect(() => {
+  //   const socket = socketRef.current;
+  //   if (!socket || !isAuthenticated) return;
+
+  //   const interval = setInterval(() => {
+  //     if (socket.connected) {
+  //       socket.emit("heartbeat");
+  //     }
+  //   }, 15000);
+
+  //   return () => clearInterval(interval);
+  // }, [isAuthenticated]);
+
+  const updateChatStatus = useCallback(
+    async (data: {
+      conversationId: string;
+      messageId: string;
+      status: "DELIVERED" | "READ";
+    }) => {
+      socketRef?.current?.emit("update-message-status", data);
+    },
+    [],
+  );
   useEffect(() => {
-    if (!socketRef.current || !isAuthenticated) return;
-
-    const participantIds = activeParticipants?.length
-      ? activeParticipants
-      : Array.from(
-          new Set(
-            conversations.flatMap((conversation) => {
-              return conversation.participantIds;
-            }),
-          ),
-        );
-    const interval = setInterval(() => {
-      checkParticipantsStatus(participantIds);
-    }, 5000); // every 5s
-
-    return () => clearInterval(interval);
-  }, [
-    activeParticipants,
-    checkParticipantsStatus,
-    isAuthenticated,
-    conversations,
-  ]);
-
-  // Function to handle heartbeat
-  useEffect(() => {
-    const socket = socketRef.current;
-    if (!socket || !isAuthenticated) return;
-
-    const interval = setInterval(() => {
-      if (socket.connected) {
-        socket.emit("heartbeat");
+    if (!isSocketConnected) return;
+    const handleUpdateConversation = (data: {
+      conversation: Conversation;
+      chat: Message;
+    }) => {
+      if (data.conversation._id !== activeConversationId) {
+        updateConversation({
+          ...data.conversation,
+          lastMessageId: data.chat._id,
+          lastMessage: data.chat,
+        });
+        if (data?.chat?.status === "SENT") {
+          updateChatStatus({
+            conversationId: data.conversation._id,
+            messageId: data.chat._id,
+            status: "DELIVERED",
+          });
+        }
       }
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, [isAuthenticated]);
+    };
+    socketRef?.current?.on("update-conversation", handleUpdateConversation);
+    return () => {
+      socketRef?.current?.off("update-conversation", handleUpdateConversation);
+    };
+  }, [updateConversation, isSocketConnected]);
 
   return (
     <SocketContext.Provider

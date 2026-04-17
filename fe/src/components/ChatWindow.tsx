@@ -123,6 +123,7 @@ const ChatWindow: React.FC = () => {
           status: "DELIVERED",
         });
       }
+
       updateConversation({
         ...data.conversation,
         lastMessageId: data.message._id,
@@ -140,10 +141,16 @@ const ChatWindow: React.FC = () => {
     }) => {
       const { message } = data;
 
-      if (message.senderId !== currentUser?._id) return;
-      updateMessage(message);
+      updateMessage({ ...message, conversationId: message?.conversation?._id });
+
+      if (message?.conversation?.lastMessageId === message?._id) {
+        updateConversation({
+          ...activeConversation,
+          lastMessage: message,
+        });
+      }
     },
-    [updateMessage, currentUser],
+    [updateMessage, activeConversation, updateConversation],
   );
 
   useEffect(() => {

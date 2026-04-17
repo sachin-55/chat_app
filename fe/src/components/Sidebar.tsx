@@ -5,6 +5,7 @@ import { Avatar, Flex, Input } from "./Common";
 import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate } from "react-router-dom";
 import { useSocket } from "../context/socketProvider";
+import type { Message } from "../types";
 
 const SidebarContainer = styled.div`
   width: 350px;
@@ -90,6 +91,19 @@ const Sidebar: React.FC = () => {
     const query = e.target.value;
     setSearch(query);
   };
+  const getStatusIcon = (message: Message) => {
+    if (message.senderId !== user._id) return null;
+    switch (message.status) {
+      case "SENT":
+        return "✓";
+      case "DELIVERED":
+        return "✓✓";
+      case "READ":
+        return "✓✓✓";
+      default:
+        return "✓";
+    }
+  };
 
   return (
     <SidebarContainer>
@@ -136,6 +150,9 @@ const Sidebar: React.FC = () => {
                 <div style={{ flex: 1 }}>
                   <UserName>{receiverUser?.name}</UserName>
                   <LastMsg>{conversation.lastMessage?.text}</LastMsg>
+                  <span style={{ marginRight: "4px" }}>
+                    {getStatusIcon(conversation.lastMessage)}
+                  </span>
                 </div>
               </Flex>
             </ItemCard>
