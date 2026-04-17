@@ -269,6 +269,23 @@ const handleNewMessage = (cSocket: Socket, userId: string) => {
           .in(room)
           .emit("new-message", { message: newMessage, conversation });
         updateConversationToOtherMember(newMessage, conversation);
+
+        // check if user is on the room or not if not then send Push Notifications
+        const messageSenderSocketId = cSocket.id;
+
+        // Get all sockets in the room
+        const socketsInRoom = await cSocket.nsp.adapter.sockets(
+          new Set([room]),
+        );
+
+        //  Filter out the sender's socket
+        const otherParticipantsInRoom = Array.from(socketsInRoom).find(
+          (socketId) => socketId !== messageSenderSocketId,
+        );
+
+        if (!otherParticipantsInRoom) {
+          //TODO: Send push notification
+        }
       } catch (error: any) {
         if (error.message) {
           cSocket.emit("socket-error", { message: error.message });
