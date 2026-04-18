@@ -49,9 +49,7 @@ const registerServiceWorkerAndPushNotification = async (
     applicationServerKey: urlBase64ToUint8Array(publicVapidKey),
   });
 
-  await api.post(
-    "/users/subscribe-push-notification",
-    { data: subscription },
-    { signal },
-  );
+  await api.post("/users/subscribe-push-notification", subscription, {
+    signal,
+  });
 };

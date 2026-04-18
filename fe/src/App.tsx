@@ -25,7 +25,6 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!isAuthenticated) return;
     const abortController = new AbortController();
-    console.log({ NN: Notification.permission });
 
     if (Notification.permission === "default") {
       Notification.requestPermission().then((permission) => {

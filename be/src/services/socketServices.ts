@@ -286,10 +286,9 @@ const handleNewMessage = (cSocket: Socket, userId: string) => {
         );
 
         if (!otherParticipantsInRoom) {
-          //TODO: Send push notification
-
           const user = await User.findById(newMessage.receiverId);
           const subscription = user?.pushSubscription;
+
           if (!subscription) return;
 
           const payload = JSON.stringify({
