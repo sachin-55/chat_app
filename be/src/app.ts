@@ -6,6 +6,7 @@ import cors from "cors";
 import express, { Application, Request, Response } from "express";
 import { globalCentralErrorHandler } from "./controllers";
 import { mainRouterV1 } from "./routes";
+import { initWebPushNotification } from "./services/pushNotification";
 
 const app: Application = express();
 
@@ -33,6 +34,7 @@ app.get("/health", (_req: Request, res: Response) => {
 
 app.use("/api/v1", mainRouterV1());
 initDB();
+initWebPushNotification();
 
 app.use((req: Request, res: Response) => {
   res.handleResponse({

@@ -1,9 +1,9 @@
-import { model, Schema } from "mongoose";
-import { IUser } from "../interface/user";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import { config } from "@/config";
 import { AppError } from "@/utils";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import mongoose, { model, Schema } from "mongoose";
+import { IUser } from "../interface/user";
 
 const userSchema = new Schema<IUser>(
   {
@@ -14,6 +14,9 @@ const userSchema = new Schema<IUser>(
     lastSeen: { type: Date },
     isOnline: { type: Boolean, default: false },
     socketId: { type: String, select: false },
+    pushSubscription: {
+      type: mongoose.Schema.Types.Mixed,
+    },
   },
   { timestamps: true },
 );

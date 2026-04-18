@@ -6,13 +6,17 @@ const router = Router();
 export const userRoutes = () => {
   router.post("/register", userController.registerUser);
   router.post("/login", userController.loginUser);
-
   router.get(
     "/",
     authenticate({ isOptional: true }),
     userController.getAllUsers,
   );
 
+  router.post(
+    "/subscribe-push-notification",
+    authenticate({ isOptional: true }),
+    userController.subscribePushNotification,
+  );
   router.post(
     "/logout",
     authenticate({ isLogout: true }),

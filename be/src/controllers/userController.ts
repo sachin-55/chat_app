@@ -1,6 +1,6 @@
 import { IUser } from "@/database/interface/user";
 import { User } from "@/database/models";
-import { BadRequestError, catchAsync } from "@/utils";
+import { BadRequestError, catchAsync, NotFoundError } from "@/utils";
 import {
   getAllUsersQuerySchema,
   loginUserBodySchema,
@@ -99,3 +99,23 @@ export const logout = catchAsync(async (_req: Request, res: Response) => {
 
   return res.handleResponse({ message: "Logout successfully" });
 });
+
+export const subscribePushNotification = catchAsync(
+  async (req: Request, res: Response) => {
+    const { _id: userId } = req.user || {};
+    const subscription = req.body;
+    if (!userId) {
+      return res.handleResponse({ message: "No User." });
+    }
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new NotFoundError("User not found");
+    }
+
+    user.pushSubscription = subscription;
+    await user.save();
+    return res.handleResponse({
+      message: "Push notification subscribed successfully",
+    });
+  },
+);

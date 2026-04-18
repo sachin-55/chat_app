@@ -18,4 +18,8 @@ export const config = {
   REFRESH_TOKEN_EXPIRY: (process.env.REFRESH_TOKEN_EXPIRY || "7d") as
     | number
     | StringValue,
+  FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5173",
+  VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY || "",
+  VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY || "",
+  VAPID_EMAIL: process.env.VAPID_EMAIL || "",
 };

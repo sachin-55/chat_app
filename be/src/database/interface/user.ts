@@ -1,5 +1,14 @@
 import { Document } from "mongoose";
 
+export interface IPushSubscription {
+  endpoint: string;
+  expirationTime: DOMHighResTimeStamp | null;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
+
 export interface IUserType {
   name: string;
   email: string;
@@ -8,6 +17,7 @@ export interface IUserType {
   lastSeen?: string;
   isOnline: boolean;
   socketId?: string;
+  pushSubscription?: IPushSubscription;
 
   generateAccessToken: () => string;
   validatePassword: (

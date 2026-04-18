@@ -7,6 +7,8 @@ import { Socket } from "socket.io";
 import { createNewMessage, updateChatStatus } from "./messageService";
 import { mainNamespace } from "@/socket";
 import { IConversation } from "@/database/interface/conversation";
+import webpush from "web-push";
+import { config } from "@/config";
 
 const OFFLINE_TIMEOUT_MS = 5 * 60 * 1000; // offline after 5 ,minutes of inactivity
 
@@ -285,6 +287,22 @@ const handleNewMessage = (cSocket: Socket, userId: string) => {
 
         if (!otherParticipantsInRoom) {
           //TODO: Send push notification
+
+          const user = await User.findById(newMessage.receiverId);
+          const subscription = user?.pushSubscription;
+          if (!subscription) return;
+
+          const payload = JSON.stringify({
+            title: "New Message",
+            body: newMessage.text,
+            url: `${config.FRONTEND_URL}/conversations?cid=${room}`,
+          });
+
+          try {
+            await webpush.sendNotification(subscription, payload);
+          } catch (err) {
+            console.error("Push failed:", err);
+          }
         }
       } catch (error: any) {
         if (error.message) {
